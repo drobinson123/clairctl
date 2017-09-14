@@ -2,6 +2,8 @@ package clair
 
 import (
 	"fmt"
+	"os"
+	"path"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
@@ -30,7 +32,7 @@ func newLayering(image reference.NamedTagged) (*layering, error) {
 	}
 	layer.hURL = fmt.Sprintf("http://%v/v2", localIP)
 	if config.IsLocal {
-		layer.hURL = strings.Replace(layer.hURL, "/v2", "/local", -1)
+		layer.hURL = fmt.Sprintf("http://%v/local", config.ServerAddr)
 		log.Infof("using %v as local url", layer.hURL)
 	}
 	return &layer, nil
@@ -61,7 +63,14 @@ func (layers *layering) pushAll() error {
 
 		//FIXME Update to TLS
 		if config.IsLocal {
-			local := layers.hURL + "/" + layers.image.Hostname()
+			// Verify what's on disk, send the correct path in the request
+			var local string
+			layerPath := path.Join(config.TmpLocal(), layers.image.Hostname())
+			if _, err := os.Stat(layerPath); !os.IsNotExist(err) {
+				local = layers.hURL + "/" + layers.image.Hostname()
+			} else {
+				local = layers.hURL
+			}
 			payload.Layer.Path = strings.Replace(payload.Layer.Path, u.String(), local, 1)
 			payload.Layer.Path += "/layer.tar"
 		}

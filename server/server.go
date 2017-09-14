@@ -20,6 +20,13 @@ import (
 
 var log = capnslog.NewPackageLogger("github.com/jgsqware/clairctl", "server")
 
+func logger(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Infof("request: %s %s %s", r.RemoteAddr, r.Method, r.URL)
+		handler.ServeHTTP(w, r)
+	})
+}
+
 //Serve run a local server with the fileserver and the reverse proxy
 func Serve(sURL string) error {
 
@@ -29,8 +36,9 @@ func Serve(sURL string) error {
 
 		listener := tcpListener(sURL)
 		log.Info("Starting Server on ", listener.Addr())
+		config.ServerAddr = listener.Addr()
 
-		if err := http.Serve(listener, nil); err != nil {
+		if err := http.Serve(listener, logger(http.DefaultServeMux)); err != nil {
 			log.Fatalf("local server error: %v", err)
 		}
 	}()

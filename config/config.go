@@ -282,6 +282,8 @@ func writeConfigFile(logins loginMapping, file string) error {
 	return nil
 }
 
+var ServerAddr net.Addr
+
 //LocalServerIP return the local clairctl server IP
 func LocalServerIP() (string, error) {
 	localPort := viper.GetString("clairctl.port")

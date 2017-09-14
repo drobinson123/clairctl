@@ -33,6 +33,11 @@ var reportCmd = &cobra.Command{
 
 		analyzes := clair.Analyze(image, manifest)
 
+		if len(analyzes.Layers) == 0 {
+			fmt.Println(errInternalError)
+			log.Fatal("analysis failed, no layers found")
+		}
+
 		if whitelistConfig != "" {
 			whiteListProcessor := NewWhiteList(whitelistConfig)
 			whiteListProcessor.filter(analyzes)
